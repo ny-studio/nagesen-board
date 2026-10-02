@@ -1,0 +1,24 @@
+# 全国番付を 10 分おきに更新して GitHub Pages に置く
+name: board
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python publish.py
+        env:
+          BOARD_URL: ${{ secrets.BOARD_URL }}
+          TITLE_ID: ${{ secrets.TITLE_ID }}
+          STAT_NAME: ${{ secrets.STAT_NAME }}
+      - run: |
+          if [ -n "$(git status --porcelain board.txt)" ]; then
+            git config user.name "board-bot"; git config user.email "board-bot@users.noreply.github.com"
+            git add board.txt && git commit -m "update board" && git push
+          fi
